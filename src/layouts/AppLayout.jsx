@@ -3,7 +3,7 @@ import Header from "../components/Header";
 
 const AppLayout = () => {
   return (
-    <div>
+    <div className="">
       <div className="grid-background"></div>
       <main className="min-h-screen container">
         <Header />
