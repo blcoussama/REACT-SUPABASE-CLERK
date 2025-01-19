@@ -1,34 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import AppLayout from './layouts/AppLayout'
+import LandingPage from "./pages/LandingPage"
+import OnBoarding from "./pages/OnBoarding"
+import JobListing from "./pages/JobListing"
+import Job from "./pages/Job"
+import SavedJobs from "./pages/SavedJobs"
+import PostJob from "./pages/PostJob"
+import MyJobs from "./pages/MyJobs"
+import { ThemeProvider } from "./components/themeProvider"
+
+import "./App.css";
+
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    children: [
+      {
+        path: "/",
+        element: <LandingPage />
+      },
+      {
+        path: "/onboarding",
+        element: <OnBoarding />
+      },
+      {
+        path: "/jobs",
+        element: <JobListing />
+      },
+      {
+        path: "/job/:id",
+        element: <Job />
+      },
+      {
+        path: "/post-job",
+        element: <PostJob />
+      },
+      {
+        path: "/saved-job",
+        element: <SavedJobs />
+      },
+      {
+        path: "/my-jobs",
+        element: <MyJobs />
+      }
+    ]
+  }
+])
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <RouterProvider router={router} />
+    </ThemeProvider>
   )
 }
 
