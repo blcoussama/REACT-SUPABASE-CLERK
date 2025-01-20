@@ -20,7 +20,7 @@ export async function getJobs(token, { location, company_id, searchQuery}) {
     const {data, error} = await query
 
     if(error) {
-        console.error("Error fertching Jobs: ", error)
+        console.error("Error fetching Jobs: ", error)
         return null
     }
 
