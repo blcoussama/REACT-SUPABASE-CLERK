@@ -35,15 +35,10 @@ const LandingPage = () => {
           Explore thousands of job listings or find the perfect candidate
         </p>
       </section>
-      <div className="flex gap-6 justify-center">
-        <Link to={"/jobs"}>
+      <div className="flex justify-center">
+        <Link to={"/onboarding"}>
           <Button variant="blue" size="xl">
-            Find Jobs
-          </Button>
-        </Link>
-        <Link to={"/post-job"}>
-          <Button variant="destructive" size="xl">
-            Post a Job
+            Get Started
           </Button>
         </Link>
       </div>
