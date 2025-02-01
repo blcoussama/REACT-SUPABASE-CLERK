@@ -1,5 +1,6 @@
 import { getSingleJob, updateHiringStatus } from "@/api/ApiJobs"
-import ApplyJobDrawer from "@/components/ApplyJob"
+import ApplicationCard from "@/components/ApplicationCard"
+import {ApplyJobDrawer} from "@/components/ApplyJob"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import useFetch from "@/hooks/useFetch"
 import { useUser } from "@clerk/clerk-react"
@@ -18,6 +19,12 @@ const Job = () => {
   const { fn:fnJob, loading:loadingJob, data:dataJob } = useFetch(getSingleJob, {
     job_id: id,
   })
+
+  useEffect(() => {
+    if(isLoaded) fnJob()
+  }, [isLoaded])
+
+
   const { fn:fnHiringStatus, loading:loadingHiringStatus } = useFetch(updateHiringStatus, {
     job_id: id,
   })
@@ -27,9 +34,7 @@ const Job = () => {
     fnHiringStatus( isOpen ).then(() => fnJob())
   }
 
-  useEffect(() => {
-    if(isLoaded) fnJob()
-  }, [isLoaded])
+  
 
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="#ffffff" />
@@ -96,7 +101,18 @@ const Job = () => {
       />
       
       )}
-
+      
+      {loadingHiringStatus && <BarLoader width={"100%"} color="#36d7b7" />}
+      {dataJob?.applications?.length > 0 && dataJob?.recruiter_id === user?.id && (
+        <div className="flex flex-col gap-2">
+          <h2 className="font-bold mb-4 text-xl ml-1">Applications</h2>
+          {dataJob?.applications.map((application) => {
+            return (
+              <ApplicationCard key={application.id} application={application} />
+            );
+          })}
+        </div>
+      )}
 
     </div>
 
