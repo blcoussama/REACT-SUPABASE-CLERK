@@ -44,7 +44,7 @@ const Job = () => {
   return (
     <div className='flex flex-col gap-8 mt-5'>
       <div className="flex flex-col-reverse gap-6 md:flex-row justify-between items-center">
-        <h1 className="gradient-title font-extrabold pb-3 text-4xl sm:text-6xl">{dataJob?.title}</h1>
+        <h1 className="gradient-title font-extrabold pb-3 text-4xl sm:text-6xl capitalize">{dataJob?.title}</h1>
         <img src={dataJob?.company?.logo_url} className="h-12" alt={dataJob?.title} />
       </div>
 
@@ -101,7 +101,7 @@ const Job = () => {
       />
       
       )}
-      
+
       {loadingHiringStatus && <BarLoader width={"100%"} color="#36d7b7" />}
       {dataJob?.applications?.length > 0 && dataJob?.recruiter_id === user?.id && (
         <div className="flex flex-col gap-2">
