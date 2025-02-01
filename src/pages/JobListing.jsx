@@ -9,7 +9,6 @@ import { getCompanies } from "@/api/ApiCompanies"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { State } from "country-state-city"
 
 
 const JobListing = () => {
@@ -19,6 +18,9 @@ const JobListing = () => {
   const [company_id, setCompany_id] = useState("")
 
   const { isLoaded } = useUser()
+
+  // Define the hardcoded list of cities
+  const selectedCities = ["Tanger", "Casablanca", "Rabat"];
 
   const { fn:fnJobs, data:dataJobs, loading:loadingJobs } = useFetch(getJobs, {
     location, company_id, searchQuery,
@@ -76,11 +78,11 @@ const JobListing = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {State.getStatesOfCountry("MA").map(({name}) => {
-                return (<SelectItem key={name} value={name}>
-                  {name} 
-                </SelectItem>)
-              })}
+              {selectedCities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>

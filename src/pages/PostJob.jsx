@@ -2,7 +2,6 @@ import { getCompanies } from "@/api/ApiCompanies";
 import { addNewJob } from "@/api/ApiJobs";
 import AddCompanyDrawer from "@/components/AddCompanyDrawer";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -17,13 +16,13 @@ import useFetch from "@/hooks/useFetch";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import MDEditor from "@uiw/react-md-editor";
-import { State } from "country-state-city";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarLoader } from "react-spinners";
 import { z } from "zod";
 
+// Define the schema for form validation
 const schema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().min(1, { message: "Description is required" }),
@@ -35,6 +34,9 @@ const schema = z.object({
 const PostJob = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+
+  // Define the hardcoded list of cities
+  const selectedCities = ["Tanger", "Casablanca", "Rabat"];
 
   const {
     register,
@@ -104,6 +106,7 @@ const PostJob = () => {
         )}
 
         <div className="flex gap-4 items-center">
+          {/* Customized location dropdown */}
           <Controller
             name="location"
             control={control}
@@ -114,9 +117,9 @@ const PostJob = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {State.getStatesOfCountry("IN").map(({ name }) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {selectedCities.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -124,6 +127,8 @@ const PostJob = () => {
               </Select>
             )}
           />
+
+          {/* Company selection */}
           <Controller
             name="company_id"
             control={control}
@@ -151,6 +156,7 @@ const PostJob = () => {
           />
           <AddCompanyDrawer fetchCompanies={fnCompanies} />
         </div>
+
         {errors.location && (
           <p className="text-red-500">{errors.location.message}</p>
         )}
@@ -158,6 +164,7 @@ const PostJob = () => {
           <p className="text-red-500">{errors.company_id.message}</p>
         )}
 
+        {/* Requirements editor */}
         <Controller
           name="requirements"
           control={control}
@@ -168,13 +175,12 @@ const PostJob = () => {
         {errors.requirements && (
           <p className="text-red-500">{errors.requirements.message}</p>
         )}
-        {errors.errorCreateJob && (
-          <p className="text-red-500">{errors?.errorCreateJob?.message}</p>
-        )}
+
         {errorCreateJob?.message && (
           <p className="text-red-500">{errorCreateJob?.message}</p>
         )}
         {loadingCreateJob && <BarLoader width={"100%"} color="#36d7b7" />}
+
         <Button type="submit" variant="blue" size="lg" className="mt-2">
           Submit
         </Button>
