@@ -1,4 +1,5 @@
 import { getSingleJob, updateHiringStatus } from "@/api/ApiJobs"
+import ApplyJobDrawer from "@/components/ApplyJob"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import useFetch from "@/hooks/useFetch"
 import { useUser } from "@clerk/clerk-react"
@@ -88,6 +89,15 @@ const Job = () => {
         className="bg-transparent sm:text-lg"
       />
       {/* Render applications */}
+      {dataJob?.recruiter_id !== user?.id && (
+      
+      <ApplyJobDrawer job={dataJob} user={user} fetchJob={fnJob}
+        applied={dataJob?.applications?.find((ap) => ap.candidate_id === user.id)}
+      />
+      
+      )}
+
+
     </div>
 
   )
