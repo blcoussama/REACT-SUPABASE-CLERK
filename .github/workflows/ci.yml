@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: Front (lint + tests + build + audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev
+      - name: Type-check the Edge Function (Deno)
+        run: npx --yes deno@2.9.6 check --no-config supabase/functions/set-role/index.ts
+
+  rls:
+    name: Row Level Security (pgTAP on supabase/postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: supabase/postgres:17.6.1.178
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Migrations + pgTAP tests (rolled back)
+        run: npm run test:db
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
