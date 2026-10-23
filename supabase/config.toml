@@ -1,0 +1,15 @@
+# Supabase CLI configuration (local development: `supabase start`).
+project_id = "react-supabase-clerk"
+
+[api]
+schemas = ["public"]
+
+# Clerk as third-party auth provider: Supabase verifies Clerk session tokens.
+# Replace the domain with your Clerk Frontend API domain (Clerk dashboard > Supabase integration).
+[auth.third_party.clerk]
+enabled = true
+domain = "your-instance.clerk.accounts.dev"
+
+# The function verifies the Clerk session token itself (see functions/set-role/index.ts).
+[functions.set-role]
+verify_jwt = false
