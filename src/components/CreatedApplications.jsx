@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import ApplicationCard from "./ApplicationCard";
 import { useEffect } from "react";
 import { getApplications } from "@/api/ApiApplications";

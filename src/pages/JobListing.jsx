@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { getJobs } from "@/api/ApiJobs"
 import useFetch from "@/hooks/useFetch"
-import { useUser } from "@clerk/clerk-react"
+import { useUser } from "@clerk/react"
 import { useEffect, useState } from "react"
 import { BarLoader } from "react-spinners"
 import JobCard from "../components/JobCard"
@@ -43,7 +43,7 @@ const JobListing = () => {
     let formData = new FormData(e.target)
 
     const query = formData.get("search-query")
-    if(query) setSearchQuery(query)
+    setSearchQuery(typeof query === "string" ? query.trim() : "")
   }
 
   const clearFilters = () => {
@@ -64,7 +64,7 @@ const JobListing = () => {
       <form onSubmit={handleSearch} className="h-14 flex w-full gap-2 items-center mb-3">
         <Input 
           type="text" 
-          placeholder="Seach Jobs by Title..." 
+          placeholder="Search Jobs by Title..." 
           name="search-query"
           className="h-full flex-1 px-4 text-md" 
         />
@@ -93,11 +93,11 @@ const JobListing = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {dataCompanies?.map(({name, id}) => {
-                return (<SelectItem key={name} value={id}>
-                  {name} 
-                </SelectItem>)
-              })}
+              {dataCompanies?.map(({ name, id }) => (
+                <SelectItem key={id} value={String(id)}>
+                  {name}
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -110,7 +110,7 @@ const JobListing = () => {
       )}
 
       {loadingJobs === false && (
-        <div className="mt-8 grid md:grid-cols-2 lg:grid-col-3 gap-4">
+        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {dataJobs?.length ? (
             dataJobs.map((job) => {
               return <JobCard key={job.id} job={job} savedInit={job?.saved?.length > 0} />

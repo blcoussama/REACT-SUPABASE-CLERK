@@ -1,67 +1,62 @@
 import { Link, useSearchParams } from "react-router-dom"
 import { Button } from "./ui/button"
-import { SignedIn, SignedOut, SignIn, UserButton, useUser } from "@clerk/clerk-react"
-import { BriefcaseBusiness, PenBox } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Show, SignIn, UserButton } from "@clerk/react"
+import { BriefcaseBusiness, Heart, PenBox } from "lucide-react"
+import useRole from "@/hooks/useRole"
 
 const Header = () => {
-
-  const [showSignIn, setShowSignIn] = useState(false)
-
   const [search, setSearch] = useSearchParams()
+  const role = useRole()
 
-  const { user } = useUser()
-
-  useEffect(() => {
-    if(search.get("sign-in")) {
-      setShowSignIn(true)
-    }
-  }, [search])
+  // The sign-in modal is driven by the URL (?sign-in=true), e.g. after a redirect from a protected page
+  const showSignIn = Boolean(search.get("sign-in"))
+  const openSignIn = () => setSearch({ "sign-in": "true" })
 
   const handleOverlayClick = (e) => {
-    if(e.target === e.currentTarget)
-    setShowSignIn(false)
-    setSearch({})
+    if (e.target === e.currentTarget) setSearch({})
   }
 
   return (
     <>
       <nav className="py-4 flex justify-between items-center">
-        <Link>
-          <img src="/logo.png" alt="PROFYLE logo" className="h-20" />
+        <Link to="/">
+          <img src="/logo.png" alt="Hirrd logo" className="h-20" />
         </Link>
 
         <div className="flex gap-8">
-          <SignedOut>
-            <Button variant="outline" onClick={() => setShowSignIn(true)}>Login</Button>
-          </SignedOut>  
+          <Show when="signed-out">
+            <Button variant="outline" onClick={openSignIn}>Login</Button>
+          </Show>
 
-          <SignedIn>
-            {/* Add a condition here */}
-            { user?.unsafeMetadata?.role === "recruiter" && (
+          <Show when="signed-in">
+            {/* UI only: posting a job is also refused by RLS for non-recruiters */}
+            {role === "recruiter" && (
               <Link to="/post-job">
                 <Button className="rounded-full" variant="destructive">
                   <PenBox size={20} className="mr-2" />
-                  Post a job 
+                  Post a job
                 </Button>
-              </Link>)
-            }
-            <UserButton appearance={{
-              elements: {
-                avatarBox: "w-10 h-10"
-              }
-            }}>
+              </Link>
+            )}
+            <UserButton appearance={{ elements: { avatarBox: "w-10 h-10" } }}>
               <UserButton.MenuItems>
-                <UserButton.Link label="My Jobs" labelIcon={<BriefcaseBusiness size={15} />} href="/my-jobs" />
-                <UserButton.Link label="Saved Jobs" labelIcon={<BriefcaseBusiness size={15} />} href="/saved-jobs" />
+                <UserButton.Link
+                  label={role === "candidate" ? "My Applications" : "My Jobs"}
+                  labelIcon={<BriefcaseBusiness size={15} />}
+                  href="/my-jobs"
+                />
+                <UserButton.Link label="Saved Jobs" labelIcon={<Heart size={15} />} href="/saved-jobs" />
               </UserButton.MenuItems>
             </UserButton>
-          </SignedIn>
+          </Show>
         </div>
-      
       </nav>
 
-      {showSignIn && <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50" onClick={handleOverlayClick}><SignIn signUpForceRedirectUrl="/onboarding" fallbackRedirectUrl="/onboarding"></SignIn></div>}
+      {showSignIn && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50" onClick={handleOverlayClick}>
+          <SignIn signUpForceRedirectUrl="/onboarding" fallbackRedirectUrl="/onboarding" />
+        </div>
+      )}
     </>
   )
 }

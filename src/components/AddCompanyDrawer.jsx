@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import {
   Drawer,
   DrawerClose,
@@ -15,27 +14,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import useFetch from "@/hooks/useFetch";
 import { addNewCompany } from "@/api/ApiCompanies";
+import { LOGO_TYPES, MAX_LOGO_BYTES } from "@/api/files";
+import { useUser } from "@clerk/react";
 import { BarLoader } from "react-spinners";
-import { useEffect } from "react";
 
 const schema = z.object({
-  name: z.string().min(1, { message: "Company name is required" }),
+  name: z.string().trim().min(1, { message: "Company name is required" }).max(100),
   logo: z
     .any()
-    .refine(
-      (file) =>
-        file[0] &&
-        (file[0].type === "image/png" || file[0].type === "image/jpeg"),
-      {
-        message: "Only Images are allowed",
-      }
-    ),
+    .refine((files) => files?.[0] && LOGO_TYPES.includes(files[0].type), {
+      message: "Only PNG, JPEG or WebP images are allowed",
+    })
+    .refine((files) => files?.[0]?.size <= MAX_LOGO_BYTES, {
+      message: "The logo must be smaller than 2 MB",
+    }),
 });
 
 const AddCompanyDrawer = ({ fetchCompanies }) => {
+  const { user } = useUser();
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -44,26 +44,24 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
   const {
     loading: loadingAddCompany,
     error: errorAddCompany,
-    data: dataAddCompany,
     fn: fnAddCompany,
   } = useFetch(addNewCompany);
 
   const onSubmit = async (data) => {
-    fnAddCompany({
-      ...data,
+    const created = await fnAddCompany({
+      name: data.name,
       logo: data.logo[0],
+      user_id: user.id,
     });
-  };
-
-  useEffect(() => {
-    if (dataAddCompany?.length > 0) {
+    if (created?.length > 0) {
+      reset();
       fetchCompanies();
     }
-  }, [loadingAddCompany]);
+  };
 
   return (
     <Drawer>
-      <DrawerTrigger>
+      <DrawerTrigger asChild>
         <Button type="button" size="sm" variant="secondary">
           Add Company
         </Button>

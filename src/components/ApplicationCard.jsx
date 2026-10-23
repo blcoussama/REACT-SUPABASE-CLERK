@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Boxes, BriefcaseBusiness, Download, School } from "lucide-react";
 import {
   Card,
@@ -14,27 +13,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { updateApplicationStatus } from "@/api/ApiApplications";
+import { getResumeUrl, updateApplicationStatus } from "@/api/ApiApplications";
+import supabase from "@/utils/supabase";
+import { useState } from "react";
 import useFetch from "@/hooks/useFetch";
 import { BarLoader } from "react-spinners";
 
 const ApplicationCard = ({ application, isCandidate = false }) => {
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = application?.resume;
-    link.target = "_blank";
-    link.click();
+  const [downloadError, setDownloadError] = useState(null);
+
+  // The "resumes" bucket is private: open the file through a signed URL valid for 60 seconds.
+  const handleDownload = async () => {
+    setDownloadError(null);
+    try {
+      const url = await getResumeUrl(supabase, application.resume);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setDownloadError(err.message);
+    }
   };
 
-  const { loading: loadingHiringStatus, fn: fnHiringStatus } = useFetch(
+  // Updates THIS application only (filtered on its id; RLS: recruiter who owns the job)
+  const { loading: loadingHiringStatus, error: statusError, fn: fnHiringStatus } = useFetch(
     updateApplicationStatus,
-    {
-      job_id: application.job_id,
-    }
+    { application_id: application.id }
   );
 
   const handleStatusChange = (status) => {
-    fnHiringStatus(status).then(() => fnHiringStatus());
+    fnHiringStatus(status);
   };
 
   return (
@@ -45,11 +51,9 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
           {isCandidate
             ? `${application?.job?.title} at ${application?.job?.company?.name}`
             : application?.name}
-          <Download
-            size={18}
-            className="bg-white text-black rounded-full h-8 w-8 p-1.5 cursor-pointer"
-            onClick={handleDownload}
-          />
+          <button type="button" onClick={handleDownload} aria-label="Download the resume">
+            <Download size={18} className="bg-white text-black rounded-full h-8 w-8 p-1.5 cursor-pointer" />
+          </button>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 flex-1">
@@ -67,6 +71,8 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
           </div>
         </div>
         <hr />
+        {downloadError && <p className="text-red-500">{downloadError}</p>}
+        {statusError && <p className="text-red-500">{statusError.message}</p>}
       </CardContent>
       <CardFooter className="flex justify-between">
         <span>{new Date(application?.created_at).toLocaleString()}</span>

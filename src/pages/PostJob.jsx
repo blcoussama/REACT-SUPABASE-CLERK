@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import useFetch from "@/hooks/useFetch";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import MDEditor from "@uiw/react-md-editor";
+import { sanitizePlugins } from "@/components/SafeMarkdown";
+import useRole from "@/hooks/useRole";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -24,15 +26,16 @@ import { z } from "zod";
 
 // Define the schema for form validation
 const schema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().min(1, { message: "Description is required" }),
+  title: z.string().trim().min(1, { message: "Title is required" }).max(200),
+  description: z.string().trim().min(1, { message: "Description is required" }).max(10000),
   location: z.string().min(1, { message: "Select a location" }),
-  company_id: z.string().min(1, { message: "Select or Add a new Company" }),
-  requirements: z.string().min(1, { message: "Requirements are required" }),
+  company_id: z.coerce.string().min(1, { message: "Select or Add a new Company" }),
+  requirements: z.string().trim().min(1, { message: "Requirements are required" }).max(20000),
 });
 
 const PostJob = () => {
   const { user, isLoaded } = useUser();
+  const role = useRole();
   const navigate = useNavigate();
 
   // Define the hardcoded list of cities
@@ -51,21 +54,18 @@ const PostJob = () => {
   const {
     loading: loadingCreateJob,
     error: errorCreateJob,
-    data: dataCreateJob,
     fn: fnCreateJob,
   } = useFetch(addNewJob);
 
-  const onSubmit = (data) => {
-    fnCreateJob({
+  const onSubmit = async (data) => {
+    const created = await fnCreateJob({
       ...data,
-      recruiter_id: user.id,
+      company_id: Number(data.company_id),
+      recruiter_id: user.id, // checked by RLS against the token
       isOpen: true,
     });
+    if (created?.length > 0) navigate(`/job/${created[0].id}`);
   };
-
-  useEffect(() => {
-    if (dataCreateJob?.length > 0) navigate("/jobs");
-  }, [loadingCreateJob]);
 
   const {
     loading: loadingCompanies,
@@ -84,7 +84,8 @@ const PostJob = () => {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
   }
 
-  if (user?.unsafeMetadata?.role !== "recruiter") {
+  // UI redirect only: RLS refuses job creation for non-recruiters anyway
+  if (role !== "recruiter") {
     return <Navigate to="/jobs" />;
   }
 
@@ -145,7 +146,7 @@ const PostJob = () => {
                 <SelectContent>
                   <SelectGroup>
                     {companies?.map(({ name, id }) => (
-                      <SelectItem key={name} value={id}>
+                      <SelectItem key={id} value={String(id)}>
                         {name}
                       </SelectItem>
                     ))}
@@ -169,7 +170,11 @@ const PostJob = () => {
           name="requirements"
           control={control}
           render={({ field }) => (
-            <MDEditor value={field.value} onChange={field.onChange} />
+            <MDEditor
+              value={field.value}
+              onChange={field.onChange}
+              previewOptions={{ rehypePlugins: sanitizePlugins }}
+            />
           )}
         />
         {errors.requirements && (

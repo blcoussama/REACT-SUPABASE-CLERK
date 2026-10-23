@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -18,26 +17,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import useFetch from "@/hooks/useFetch";
 import { applyToJob } from "@/api/ApiApplications";
+import { MAX_RESUME_BYTES, RESUME_TYPES } from "@/api/files";
 import { BarLoader } from "react-spinners";
 
 const schema = z.object({
   experience: z
-    .number()
+    .number({ message: "Experience is required" })
+    .int()
     .min(0, { message: "Experience must be at least 0" })
-    .int(),
+    .max(80, { message: "Experience must be at most 80" }),
   skills: z.string().min(1, { message: "Skills are required" }),
   education: z.enum(["Intermediate", "Graduate", "Post Graduate"], {
     message: "Education is required",
   }),
   resume: z
     .any()
-    .refine(
-      (file) =>
-        file[0] &&
-        (file[0].type === "application/pdf" ||
-          file[0].type === "application/word"),
-      { message: "Only PDF or Word documents are allowed" }
-    ),
+    .refine((files) => files?.[0] && RESUME_TYPES.includes(files[0].type), {
+      message: "Only PDF or Word documents are allowed",
+    })
+    .refine((files) => files?.[0]?.size <= MAX_RESUME_BYTES, {
+      message: "The resume must be smaller than 5 MB",
+    }),
 });
 
 export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
@@ -57,18 +57,19 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     fn: fnApply,
   } = useFetch(applyToJob);
 
-  const onSubmit = (data) => {
-    fnApply({
+  const onSubmit = async (data) => {
+    const result = await fnApply({
       ...data,
       job_id: job.id,
       candidate_id: user.id,
       name: user.fullName,
       status: "applied",
       resume: data.resume[0],
-    }).then(() => {
+    });
+    if (result) {
       fetchJob();
       reset();
-    });
+    }
   };
 
   return (

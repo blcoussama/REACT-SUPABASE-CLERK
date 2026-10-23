@@ -1,66 +1,58 @@
-import supabaseClient, { supabaseUrl } from "@/utils/supabase";
+import { storagePath } from "./files";
+
+const RESUMES = "resumes"; // PRIVATE bucket
+const SIGNED_URL_SECONDS = 60;
 
 // - Apply to job ( candidate )
-export async function applyToJob(token, _, jobData) {
-  const supabase = await supabaseClient(token);
-
-  const random = Math.floor(Math.random() * 90000);
-  const fileName = `resume-${random}-${jobData.candidate_id}`;
+export async function applyToJob(supabase, _, jobData) {
+  const { resume: file, ...application } = jobData;
+  const path = storagePath(application.candidate_id, file, `${application.job_id}-`);
 
   const { error: storageError } = await supabase.storage
-    .from("resumes")
-    .upload(fileName, jobData.resume);
-
+    .from(RESUMES)
+    .upload(path, file, { contentType: file.type, upsert: false });
   if (storageError) throw new Error("Error uploading Resume");
 
-  const resume = `${supabaseUrl}/storage/v1/object/public/resumes/${fileName}`;
-
+  // Only the storage path is saved: the file is read later through a short-lived signed URL.
   const { data, error } = await supabase
     .from("applications")
-    .insert([
-      {
-        ...jobData,
-        resume,
-      },
-    ])
+    .insert([{ ...application, resume: path }])
     .select();
 
   if (error) {
-    console.error(error);
+    await supabase.storage.from(RESUMES).remove([path]); // no orphan file
     throw new Error("Error submitting Application");
   }
 
   return data;
 }
 
-// - Edit Application Status ( recruiter )
-export async function updateApplicationStatus(token, { job_id }, status) {
-  const supabase = await supabaseClient(token);
+// - Edit the status of ONE application ( recruiter who owns the job, enforced by RLS )
+export async function updateApplicationStatus(supabase, { application_id }, status) {
   const { data, error } = await supabase
     .from("applications")
     .update({ status })
-    .eq("job_id", job_id)
+    .eq("id", application_id)
     .select();
 
-  if (error || data.length === 0) {
-    console.error("Error Updating Application Status:", error);
-    return null;
-  }
-
+  if (error || data.length === 0) throw new Error("Error Updating Application Status");
   return data;
 }
 
-export async function getApplications(token, { user_id }) {
-  const supabase = await supabaseClient(token);
+// - Applications of the signed-in candidate
+export async function getApplications(supabase, { user_id }) {
   const { data, error } = await supabase
     .from("applications")
     .select("*, job:jobs(title, company:companies(name))")
     .eq("candidate_id", user_id);
 
-  if (error) {
-    console.error("Error fetching Applications:", error);
-    return null;
-  }
-
+  if (error) throw new Error("Error fetching Applications");
   return data;
+}
+
+// - Temporary download link for a resume (candidate or recruiter of the job, enforced by storage RLS)
+export async function getResumeUrl(supabase, path) {
+  const { data, error } = await supabase.storage.from(RESUMES).createSignedUrl(path, SIGNED_URL_SECONDS);
+  if (error) throw new Error("Error opening Resume");
+  return data.signedUrl;
 }
