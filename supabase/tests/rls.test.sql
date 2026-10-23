@@ -6,7 +6,7 @@
 -- =============================================================================
 set local search_path = public, extensions;
 
-select plan(49);
+select plan(50);
 
 -- Lets the simulated users write their results into pgTAP's temporary tables.
 do $$
@@ -208,6 +208,9 @@ select lives_ok(
 select throws_ok(
   $$ insert into public.companies (name, logo_url, created_by) values ('Fake', 'https://example.com/f.png', 'user_recruiter_b') $$,
   '42501', null, 'a recruiter cannot create a company in the name of someone else');
+select throws_ok(
+  $$ insert into public.companies (name, logo_url) values ('Evil', 'javascript:alert(1)') $$,
+  '23514', null, 'a company logo must be an http(s) URL');
 select lives_ok(
   $$ insert into storage.objects (bucket_id, name) values ('company-logo', 'user_recruiter_a/logo.png') $$,
   'a recruiter can upload a logo into his own folder');
