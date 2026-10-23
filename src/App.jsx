@@ -7,7 +7,7 @@ import Job from "./pages/Job"
 import SavedJobs from "./pages/SavedJobs"
 import PostJob from "./pages/PostJob"
 import MyJobs from "./pages/MyJobs"
-import { ThemeProvider } from "./components/themeProvider"
+import { ThemeProvider } from "./components/ThemeProvider"
 
 import "./App.css";
 import ProtectedRoute from "./components/ProtectedRoute"
